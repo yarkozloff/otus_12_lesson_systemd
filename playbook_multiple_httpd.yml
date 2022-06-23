@@ -1,0 +1,82 @@
+---
+
+- name: run multiple httpd instances
+  hosts: unitserver
+  become: true
+
+  tasks:
+    - name: install packages
+      yum:
+        name: httpd
+        state: present
+        update_cache: True
+
+    - name: copy file httpd@.service
+      copy: 
+        src: 'install/httpd@.service' 
+        dest: '/usr/lib/systemd/system/httpd@.service' 
+        owner: vagrant 
+        group: vagrant 
+        mode: 0644
+
+    - name: copy file httpd-first
+      copy:
+        src: 'install/httpd-first'
+        dest: '/etc/sysconfig/httpd-first'
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: copy file httpd-second
+      copy:
+        src: 'install/httpd-second'
+        dest: '/etc/sysconfig/httpd-second'
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: copy file first.conf
+      copy:
+        src: 'install/first.conf'
+        dest: '/etc/httpd/conf/first.conf'
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+  
+    - name: copy file second.conf
+      copy:
+        src: 'install/second.conf'
+        dest: '/etc/httpd/conf/second.conf'
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+    
+    - name: "selinux portd 8081"
+      shell:
+        cmd: "semanage port -d -t http_port_t -p tcp 8081"
+      async: 20
+      poll: 0
+
+    - name: "selinux permissive"
+      shell:
+        cmd: "setenforce 0"
+      async: 20
+      poll: 0
+      
+    - name: start httpd service
+      ansible.builtin.systemd:
+        name: httpd
+        state: started
+        enabled: yes
+
+    - name: start httpd first service
+      ansible.builtin.systemd: 
+        name: httpd@first.service
+        state: started 
+        enabled: yes
+    
+    - name: start httpd second service    
+      ansible.builtin.systemd:
+        name: httpd@second.service
+        state: started
+        enabled: yes

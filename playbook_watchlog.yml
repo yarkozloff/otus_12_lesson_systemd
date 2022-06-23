@@ -1,0 +1,59 @@
+---
+
+- name: Install monitorlog by 30sec
+  hosts: unitserver
+  become: true
+
+  tasks:
+    - name: copy test log
+      copy:
+        src: install/w3clog.log
+        dest: /var/log/w3clog.log
+
+    - name: create watchlog keyword config
+      copy:
+        src: install/watchlog
+        dest: /etc/sysconfig/watchlog
+        owner: vagrant
+        group: vagrant
+        mode: 0755
+
+    - name: create watchlog search script by keyword
+      copy:
+        src: install/watchlog.sh
+        dest: /opt/watchlog.sh
+        owner: vagrant
+        group: vagrant
+        mode: 0755
+
+    - name: create watchlog service
+      copy:
+        src: install/watchlog.service
+        dest: /etc/systemd/system/watchlog.service
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: create watchlog timer
+      copy:
+        src: install/watchlog.timer
+        dest: /etc/systemd/system/watchlog.timer
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: permission for watchlog.sh
+      shell:
+        cmd: "chmod +x /opt/watchlog.sh"
+
+    - name: enable and start watchlog timer
+      ansible.builtin.systemd:
+        name: watchlog.timer
+        state: started
+        enabled: yes
+
+    - name: enable and start watchlog service
+      ansible.builtin.systemd:
+        name: watchlog.service
+        state: started
+        enabled: yes

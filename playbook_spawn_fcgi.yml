@@ -1,0 +1,44 @@
+---
+
+- name: Install spawn-fcgi from the epel repository and rewrite the init script to a unit file
+  hosts: unitserver
+  become: true
+
+  tasks:
+    - name: install packages
+      yum:
+        name: '{{ item }}'
+        state: present
+        update_cache: True
+      with_items:
+        - epel-release
+        - spawn-fcgi
+        - php
+        - php-cli
+
+    - name: uncomment spawn-fcgi config 1step
+      lineinfile: dest=/etc/sysconfig/spawn-fcgi
+                  regexp='^#SOCKET='
+                  insertbefore=BOF
+                  line='SOCKET=/var/run/php-fcgi.sock'
+
+    - name: uncomment spawn-fcgi config 2step
+      lineinfile: dest=/etc/sysconfig/spawn-fcgi
+                  regexp='^#OPTIONS='
+                  insertbefore=BOF
+                  line='OPTIONS="-u apache -g apache -s $SOCKET -S -M 0600 -C 32 -F 1 -P /var/run/spawn-fcgi.pid -- /usr/bin/php-cgi"'
+
+    - name: unit file for spawn-fcgi.service
+      copy:
+        src: install/spawn-fcgi.service
+        dest: /etc/systemd/system/spawn-fcgi.service
+        owner: vagrant
+        group: vagrant
+        mode: 0644
+
+    - name: start spawn-fcgi.service
+      ansible.builtin.systemd:
+        name: spawn-fcgi.service
+        state: started
+        enabled: yes 
+                  
