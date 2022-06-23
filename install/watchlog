@@ -1,0 +1,2 @@
+WORD="error_api_log"
+LOG=/var/log/w3clog.log
